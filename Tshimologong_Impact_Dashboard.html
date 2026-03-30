@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Tshimologong Impact Report Dashboard 2024</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "recharts": "https://esm.sh/recharts@2.12.2?external=react,react-dom",
+        "lucide-react": "https://esm.sh/lucide-react@0.344.0?external=react,react-dom"
+      }
+    }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "tshi-navy": "#0B1929",
+                        "tshi-navy-light": "#0f2137",
+                        "tshi-navy-card": "#132640",
+                        "tshi-green": "#2DD881",
+                        "tshi-green-dark": "#1faa63",
+                        "tshi-pink": "#FF4D8D",
+                        "tshi-coral": "#FF6B6B",
+                        "tshi-cyan": "#3ECFCF",
+                        "tshi-orange": "#FFB347",
+                        "tshi-purple": "#A78BFA",
+                        "tshi-blue": "#60A5FA",
+                        "tshi-border": "#1e3a5f",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"],
+                        "mono": ["Space Grotesk", "monospace"],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #0B1929;
+            color: #e2e8f0;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Tab system */
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; animation: fadeUp 0.4s ease; }
+        .tab-btn { position: relative; transition: all 0.3s ease; }
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%; width: 0; height: 3px;
+            background: linear-gradient(90deg, #2DD881, #3ECFCF);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+            border-radius: 3px 3px 0 0;
+        }
+        .tab-btn.active { color: #2DD881; }
+        .tab-btn.active::after { width: 60%; }
+        .tab-btn:hover { color: #2DD881; }
+
+        /* KPI Cards */
+        .kpi-card {
+            background: linear-gradient(135deg, #132640 0%, #0f2137 100%);
+            border: 1px solid #1e3a5f;
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.3s ease;
+        }
+        .kpi-card:hover { transform: translateY(-2px); border-color: #2DD881; }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+        .kpi-card.green::before { background: linear-gradient(90deg, #2DD881, #3ECFCF); }
+        .kpi-card.pink::before { background: linear-gradient(90deg, #FF4D8D, #FF6B6B); }
+        .kpi-card.cyan::before { background: linear-gradient(90deg, #3ECFCF, #60A5FA); }
+        .kpi-card.orange::before { background: linear-gradient(90deg, #FFB347, #FF6B6B); }
+        .kpi-card.purple::before { background: linear-gradient(90deg, #A78BFA, #60A5FA); }
+
+        /* Chart panels */
+        .chart-panel {
+            background: linear-gradient(135deg, #132640 0%, #0f2137 100%);
+            border: 1px solid #1e3a5f;
+            border-radius: 16px;
+            padding: 28px;
+        }
+
+        /* SDG badge */
+        .sdg-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Bar chart CSS */
+        .bar-h {
+            height: 28px;
+            border-radius: 6px;
+            transition: width 1s ease;
+            position: relative;
+        }
+        .bar-h-label {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* Stacked bar */
+        .stack-bar {
+            display: flex;
+            height: 36px;
+            border-radius: 8px;
+            overflow: hidden;
+            gap: 2px;
+        }
+        .stack-segment {
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            min-width: 30px;
+        }
+
+        /* Donut chart */
+        .donut-ring {
+            fill: none;
+            stroke-width: 28;
+            transition: stroke-dasharray 1.5s ease;
+        }
+
+        /* Glowing text */
+        .glow-green { text-shadow: 0 0 20px rgba(45, 216, 129, 0.3); }
+
+        /* Wave decoration */
+        .wave-deco {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 60px;
+            opacity: 0.05;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                #2DD881 10px,
+                #2DD881 11px
+            );
+        }
+
+        /* Progress ring */
+        .progress-ring { transform: rotate(-90deg); }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes countUp {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0B1929; }
+        ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2DD881; }
+
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            border-bottom: 1px solid #1e3a5f;
+        }
+        .data-table td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(30, 58, 95, 0.4);
+        }
+        .data-table tr:hover td { background: rgba(45, 216, 129, 0.03); }
+
+        /* Breadcrumb chevrons */
+        .chevron-sep { display: inline-flex; align-items: center; color: #475569; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <!-- ========== GLOBAL HEADER ========== -->
+    <header class="sticky top-0 z-50 border-b border-tshi-border bg-tshi-navy/95 backdrop-blur-xl">
+        <div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-5">
+                <!-- Tshimologong Logo Text -->
+                <div class="flex flex-col leading-none">
+                    <span class="text-[22px] font-black tracking-tight text-white" style="font-family:'Space Grotesk',monospace;">TSHI<br/>MOLO<br/>GONG</span>
+                </div>
+                <div class="h-12 w-px bg-tshi-border"></div>
+                <div>
+                    <h1 class="text-lg font-bold text-white tracking-tight">Impact Report Dashboard</h1>
+                    <p class="text-xs text-slate-400 font-medium">Wits Incubator · Digital Innovation Precinct</p>
+                </div>
+                <span class="ml-2 px-3 py-1 bg-tshi-green/10 text-tshi-green text-xs font-bold rounded-full border border-tshi-green/20">2024</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-xs text-slate-500 hidden md:block">Last Updated: Mar 22, 2026</span>
+                <button onclick="window.print()" class="p-2 rounded-lg hover:bg-tshi-navy-light transition-colors" title="Export">
+                    <span class="material-symbols-outlined text-slate-400 text-xl">download</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========== TAB NAVIGATION ========== -->
+    <nav class="border-b border-tshi-border bg-tshi-navy/80 backdrop-blur-sm overflow-x-auto">
+        <div class="max-w-[1400px] mx-auto px-6 lg:px-10 flex">
+            <button class="tab-btn active flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap" onclick="switchTab(event,'overview')">
+                <span class="material-symbols-outlined text-lg">dashboard</span>Executive Overview
+            </button>
+            <button class="tab-btn flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap" onclick="switchTab(event,'skills')">
+                <span class="material-symbols-outlined text-lg">school</span>Skills Development
+            </button>
+            <button class="tab-btn flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap" onclick="switchTab(event,'enterprise')">
+                <span class="material-symbols-outlined text-lg">rocket_launch</span>Enterprise Development
+            </button>
+            <button class="tab-btn flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap" onclick="switchTab(event,'partnerships')">
+                <span class="material-symbols-outlined text-lg">handshake</span>Partnerships
+            </button>
+            <button class="tab-btn flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap" onclick="switchTab(event,'ecosystem')">
+                <span class="material-symbols-outlined text-lg">hub</span>Ecosystem & Market
+            </button>
+        </div>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="min-h-[calc(100vh-140px)]">
+
+        <!-- ======= EXECUTIVE OVERVIEW TAB ======= -->
+        <div id="overview" class="tab-pane active">
+            <div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-8 space-y-8">
+
+                <!-- Hero Header -->
+                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-tshi-navy-card via-tshi-navy to-tshi-navy-light border border-tshi-border p-8 lg:p-12">
+                    <div class="absolute top-0 right-0 w-96 h-96 bg-tshi-green/5 rounded-full blur-3xl -mr-48 -mt-48"></div>
+                    <div class="absolute bottom-0 left-0 w-64 h-64 bg-tshi-pink/5 rounded-full blur-3xl -ml-32 -mb-32"></div>
+                    <div class="relative z-10">
+                        <p class="text-tshi-green text-sm font-bold uppercase tracking-widest mb-3">2024 Impact Report</p>
+                        <h2 class="text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight mb-4">
+                            Technologies Fueling<br/>Sustainable Development
+                        </h2>
+                        <p class="text-slate-400 text-lg max-w-2xl leading-relaxed">
+                            Consolidating impact across Skills Development, Enterprise Development, Strategic Partnerships, Ecosystem Development, and Access to Markets.
+                        </p>
+                    </div>
+                    <div class="wave-deco"></div>
+                </div>
+
+                <!-- Headline KPIs -->
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="kpi-card green">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Beneficiaries</p>
+                        <p class="text-3xl font-black text-white glow-green">1,247</p>
+                        <p class="text-tshi-green text-xs font-bold mt-2">+18.3% YoY</p>
+                    </div>
+                    <div class="kpi-card pink">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Programmes Run</p>
+                        <p class="text-3xl font-black text-white">24</p>
+                        <p class="text-tshi-pink text-xs font-bold mt-2">Across 6 departments</p>
+                    </div>
+                    <div class="kpi-card cyan">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Funding</p>
+                        <p class="text-3xl font-black text-white">R42.8M</p>
+                        <p class="text-tshi-cyan text-xs font-bold mt-2">+22% vs 2023</p>
+                    </div>
+                    <div class="kpi-card orange">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Graduation Rate</p>
+                        <p class="text-3xl font-black text-white">89%</p>
+                        <p class="text-tshi-orange text-xs font-bold mt-2">Target: 85%</p>
+                    </div>
+                    <div class="kpi-card purple">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Partners</p>
+                        <p class="text-3xl font-black text-white">67</p>
+                        <p class="text-tshi-purple text-xs font-bold mt-2">14 countries</p>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Beneficiaries by Department -->
+                    <div class="chart-panel">
+                        <h3 class="text-lg font-bold text-white mb-1">Beneficiaries by Department</h3>
+                        <p class="text-slate-400 text-sm mb-6">Total programme participants per value proposition</p>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Skills Development</span>
+                                    <span class="text-tshi-green">487</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-7 overflow-hidden">
+                                    <div class="bar-h bg-gradient-to-r from-tshi-green to-tshi-cyan" style="width:78%">
+                                        <span class="bar-h-label">39%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Enterprise Development</span>
+                                    <span class="text-tshi-pink">312</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-7 overflow-hidden">
+                                    <div class="bar-h bg-gradient-to-r from-tshi-pink to-tshi-coral" style="width:50%">
+                                        <span class="bar-h-label">25%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Ecosystem Development</span>
+                                    <span class="text-tshi-cyan">218</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-7 overflow-hidden">
+                                    <div class="bar-h bg-gradient-to-r from-tshi-cyan to-tshi-blue" style="width:35%">
+                                        <span class="bar-h-label">17%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Access to Markets</span>
+                                    <span class="text-tshi-orange">142</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-7 overflow-hidden">
+                                    <div class="bar-h bg-gradient-to-r from-tshi-orange to-yellow-400" style="width:23%">
+                                        <span class="bar-h-label">11%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Prototype Development</span>
+                                    <span class="text-tshi-purple">88</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-7 overflow-hidden">
+                                    <div class="bar-h bg-gradient-to-r from-tshi-purple to-purple-400" style="width:14%">
+                                        <span class="bar-h-label">7%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Funding Distribution Donut -->
+                    <div class="chart-panel">
+                        <h3 class="text-lg font-bold text-white mb-1">Funding Distribution</h3>
+                        <p class="text-slate-400 text-sm mb-6">Programme value allocation by department (R42.8M total)</p>
+                        <div class="flex items-center gap-8">
+                            <div class="relative shrink-0">
+                                <svg width="200" height="200" viewBox="0 0 200 200">
+                                    <circle cx="100" cy="100" r="75" fill="none" stroke="#1e3a5f" stroke-width="28"/>
+                                    <!-- Skills: 38% -->
+                                    <circle cx="100" cy="100" r="75" class="donut-ring" stroke="#2DD881" stroke-dasharray="179 471" stroke-dashoffset="0" transform="rotate(-90 100 100)"/>
+                                    <!-- Enterprise: 25% -->
+                                    <circle cx="100" cy="100" r="75" class="donut-ring" stroke="#FF4D8D" stroke-dasharray="118 471" stroke-dashoffset="-179" transform="rotate(-90 100 100)"/>
+                                    <!-- Ecosystem: 18% -->
+                                    <circle cx="100" cy="100" r="75" class="donut-ring" stroke="#3ECFCF" stroke-dasharray="85 471" stroke-dashoffset="-297" transform="rotate(-90 100 100)"/>
+                                    <!-- Markets: 12% -->
+                                    <circle cx="100" cy="100" r="75" class="donut-ring" stroke="#FFB347" stroke-dasharray="57 471" stroke-dashoffset="-382" transform="rotate(-90 100 100)"/>
+                                    <!-- Proto: 7% -->
+                                    <circle cx="100" cy="100" r="75" class="donut-ring" stroke="#A78BFA" stroke-dasharray="33 471" stroke-dashoffset="-439" transform="rotate(-90 100 100)"/>
+                                    <text x="100" y="94" text-anchor="middle" fill="white" font-size="28" font-weight="900" font-family="Plus Jakarta Sans">R42.8M</text>
+                                    <text x="100" y="115" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="600" font-family="Plus Jakarta Sans">TOTAL</text>
+                                </svg>
+                            </div>
+                            <div class="flex-1 space-y-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-tshi-green"></div>
+                                    <span class="text-sm text-slate-300 flex-1">Skills Development</span>
+                                    <span class="text-sm font-bold text-white">R16.3M</span>
+                                    <span class="text-xs text-slate-500">38%</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-tshi-pink"></div>
+                                    <span class="text-sm text-slate-300 flex-1">Enterprise Dev</span>
+                                    <span class="text-sm font-bold text-white">R10.7M</span>
+                                    <span class="text-xs text-slate-500">25%</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-tshi-cyan"></div>
+                                    <span class="text-sm text-slate-300 flex-1">Ecosystem Dev</span>
+                                    <span class="text-sm font-bold text-white">R7.7M</span>
+                                    <span class="text-xs text-slate-500">18%</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-tshi-orange"></div>
+                                    <span class="text-sm text-slate-300 flex-1">Access to Markets</span>
+                                    <span class="text-sm font-bold text-white">R5.1M</span>
+                                    <span class="text-xs text-slate-500">12%</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-tshi-purple"></div>
+                                    <span class="text-sm text-slate-300 flex-1">Prototype Dev</span>
+                                    <span class="text-sm font-bold text-white">R3.0M</span>
+                                    <span class="text-xs text-slate-500">7%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SDG Alignment Section -->
+                <div class="chart-panel">
+                    <div class="flex items-center gap-2 mb-6">
+                        <span class="material-symbols-outlined text-tshi-green">public</span>
+                        <h3 class="text-lg font-bold text-white">UN Sustainable Development Goals Alignment</h3>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        <div class="bg-[#C5192D] rounded-xl p-4 text-center">
+                            <span class="text-3xl font-black text-white block">4</span>
+                            <span class="text-xs font-bold text-white/80 uppercase">Quality Education</span>
+                        </div>
+                        <div class="bg-[#FF3A21] rounded-xl p-4 text-center">
+                            <span class="text-3xl font-black text-white block">5</span>
+                            <span class="text-xs font-bold text-white/80 uppercase">Gender Equality</span>
+                        </div>
+                        <div class="bg-[#A21942] rounded-xl p-4 text-center">
+                            <span class="text-3xl font-black text-white block">8</span>
+                            <span class="text-xs font-bold text-white/80 uppercase">Decent Work</span>
+                        </div>
+                        <div class="bg-[#FD6925] rounded-xl p-4 text-center">
+                            <span class="text-3xl font-black text-white block">9</span>
+                            <span class="text-xs font-bold text-white/80 uppercase">Innovation</span>
+                        </div>
+                        <div class="bg-[#DD1367] rounded-xl p-4 text-center">
+                            <span class="text-3xl font-black text-white block">10</span>
+                            <span class="text-xs font-bold text-white/80 uppercase">Reduced Inequality</span>
+                        </div>
+                        <div class="bg-[#19486A] rounded-xl p-4 text-center">
+                            <span class="text-3xl font-black text-white block">17</span>
+                            <span class="text-xs font-bold text-white/80 uppercase">Partnerships</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Year-on-Year Trend -->
+                <div class="chart-panel" id="overview-trend-root"></div>
+            </div>
+        </div>
+
+        <!-- ======= SKILLS DEVELOPMENT TAB ======= -->
+        <div id="skills" class="tab-pane">
+            <div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-8 space-y-8">
+                <!-- Breadcrumb -->
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-slate-500">Dashboard</span>
+                    <span class="chevron-sep">/</span>
+                    <span class="text-tshi-green font-semibold">Skills Development</span>
+                </div>
+
+                <!-- Section Header -->
+                <div class="flex items-start gap-5">
+                    <div class="p-3 bg-[#C5192D]/10 rounded-xl">
+                        <span class="material-symbols-outlined text-[#C5192D] text-3xl filled">school</span>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-white tracking-tight">Skills Development</h2>
+                        <p class="text-slate-400 mt-1">Building Africa's digital talent pipeline through immersive training programmes</p>
+                    </div>
+                    <div class="ml-auto flex items-center gap-2">
+                        <div class="sdg-badge bg-[#C5192D]/20 text-[#FF6B6B]">SDG 4 · Quality Education</div>
+                        <div class="sdg-badge bg-[#DD1367]/20 text-[#FF4D8D]">SDG 10 · Reduced Inequalities</div>
+                    </div>
+                </div>
+
+                <!-- Skills KPIs -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="kpi-card green">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Beneficiaries</p>
+                        <p class="text-3xl font-black text-white">487</p>
+                        <p class="text-tshi-green text-xs font-bold mt-2">Across 8 programmes</p>
+                    </div>
+                    <div class="kpi-card pink">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Graduation Rate</p>
+                        <p class="text-3xl font-black text-white">91%</p>
+                        <p class="text-tshi-pink text-xs font-bold mt-2">+3% vs target</p>
+                    </div>
+                    <div class="kpi-card cyan">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Programme Funding</p>
+                        <p class="text-3xl font-black text-white">R16.3M</p>
+                        <p class="text-tshi-cyan text-xs font-bold mt-2">38% of total</p>
+                    </div>
+                    <div class="kpi-card orange">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Youth Beneficiaries</p>
+                        <p class="text-3xl font-black text-white">96%</p>
+                        <p class="text-tshi-orange text-xs font-bold mt-2">Under 35 years</p>
+                    </div>
+                </div>
+
+                <!-- Programme Value + Age Demographics -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="chart-panel lg:col-span-2">
+                        <h3 class="text-lg font-bold text-white mb-1">Programme Value (Sponsorship)</h3>
+                        <p class="text-slate-400 text-sm mb-6">Investment per skills programme</p>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Samsung AIEP Software Dev</span>
+                                    <span class="text-tshi-green">R3.5M</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6">
+                                    <div class="h-6 rounded-full bg-tshi-pink" style="width:100%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">BANKSETA Skills for Future</span>
+                                    <span class="text-tshi-green">R1.6M</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6">
+                                    <div class="h-6 rounded-full bg-tshi-pink" style="width:46%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">FASSET / NYDA Programme</span>
+                                    <span class="text-tshi-green">R0.5M</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6">
+                                    <div class="h-6 rounded-full bg-tshi-pink" style="width:14%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Mollo Animation Studio</span>
+                                    <span class="text-tshi-green">R0.5M</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6">
+                                    <div class="h-6 rounded-full bg-tshi-pink" style="width:14%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">2024 MICT SETA</span>
+                                    <span class="text-tshi-green">R0.1M</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6">
+                                    <div class="h-6 rounded-full bg-tshi-pink" style="width:3%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Age Demographics Donut -->
+                    <div class="chart-panel flex flex-col items-center justify-center">
+                        <h3 class="text-lg font-bold text-white mb-1 self-start">Age Demographics</h3>
+                        <p class="text-slate-400 text-sm mb-4 self-start">Youth vs Non-Youth</p>
+                        <svg width="180" height="180" viewBox="0 0 180 180">
+                            <circle cx="90" cy="90" r="65" fill="none" stroke="#1e3a5f" stroke-width="26"/>
+                            <circle cx="90" cy="90" r="65" fill="none" stroke="#2DD881" stroke-width="26"
+                                stroke-dasharray="392 408" stroke-dashoffset="0" transform="rotate(-90 90 90)"/>
+                            <circle cx="90" cy="90" r="65" fill="none" stroke="#FFB347" stroke-width="26"
+                                stroke-dasharray="16 408" stroke-dashoffset="-392" transform="rotate(-90 90 90)"/>
+                            <text x="90" y="85" text-anchor="middle" fill="white" font-size="22" font-weight="900" font-family="Plus Jakarta Sans">96%</text>
+                            <text x="90" y="105" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600" font-family="Plus Jakarta Sans">YOUTH</text>
+                        </svg>
+                        <div class="flex gap-6 mt-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-tshi-green"></div>
+                                <span class="text-xs text-slate-400">Youth (96%)</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-tshi-orange"></div>
+                                <span class="text-xs text-slate-400">Non-Youth (4%)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Beneficiaries per Programme (Stacked) -->
+                <div class="chart-panel">
+                    <h3 class="text-lg font-bold text-white mb-1">Beneficiaries per Programme</h3>
+                    <p class="text-slate-400 text-sm mb-6">Status breakdown: Graduated vs Non-fulfilment</p>
+                    <div class="flex items-center gap-6 mb-4">
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-tshi-green"></div><span class="text-xs text-slate-400">Graduated</span></div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-tshi-coral"></div><span class="text-xs text-slate-400">Non-fulfilment</span></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div class="text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-full bg-tshi-navy rounded-xl overflow-hidden" style="height:200px;display:flex;flex-direction:column;justify-content:flex-end;">
+                                    <div class="bg-tshi-green rounded-t-lg flex items-center justify-center text-white text-sm font-bold" style="height:100%">100</div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2 font-semibold">BANKSETA</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-full bg-tshi-navy rounded-xl overflow-hidden" style="height:200px;display:flex;flex-direction:column;justify-content:flex-end;">
+                                <div class="bg-tshi-coral flex items-center justify-center text-white text-xs font-bold" style="height:23.75%">19</div>
+                                <div class="bg-tshi-green flex items-center justify-center text-white text-sm font-bold" style="height:76.25%">61</div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2 font-semibold">FASSET / NYDA</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-full bg-tshi-navy rounded-xl overflow-hidden" style="height:200px;display:flex;flex-direction:column;justify-content:flex-end;">
+                                <div class="bg-tshi-green flex items-center justify-center text-white text-sm font-bold" style="height:22.5%">18</div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2 font-semibold">Samsung AIEP</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-full bg-tshi-navy rounded-xl overflow-hidden" style="height:200px;display:flex;flex-direction:column;justify-content:flex-end;">
+                                <div class="bg-tshi-green flex items-center justify-center text-white text-sm font-bold" style="height:17.5%">14</div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2 font-semibold">MICT SETA</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-full bg-tshi-navy rounded-xl overflow-hidden" style="height:200px;display:flex;flex-direction:column;justify-content:flex-end;">
+                                <div class="bg-tshi-green flex items-center justify-center text-white text-sm font-bold" style="height:16.25%">13</div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2 font-semibold">Mollo Animation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======= ENTERPRISE DEVELOPMENT TAB ======= -->
+        <div id="enterprise" class="tab-pane">
+            <div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-8 space-y-8">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-slate-500">Dashboard</span>
+                    <span class="chevron-sep">/</span>
+                    <span class="text-tshi-green font-semibold">Enterprise Development</span>
+                </div>
+
+                <div class="flex items-start gap-5">
+                    <div class="p-3 bg-[#A21942]/10 rounded-xl">
+                        <span class="material-symbols-outlined text-tshi-pink text-3xl filled">rocket_launch</span>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-white tracking-tight">Enterprise Development</h2>
+                        <p class="text-slate-400 mt-1">Accelerating startups and SMMEs through structured incubation</p>
+                    </div>
+                    <div class="ml-auto">
+                        <div class="sdg-badge bg-[#A21942]/20 text-[#FF4D8D]">SDG 8 · Decent Work & Economic Growth</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="kpi-card green">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Beneficiaries</p>
+                        <p class="text-3xl font-black text-white">87</p>
+                    </div>
+                    <div class="kpi-card pink">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Graduation Rate</p>
+                        <p class="text-3xl font-black text-white">88%</p>
+                    </div>
+                    <div class="kpi-card cyan">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Projects Funded</p>
+                        <p class="text-3xl font-black text-white">9</p>
+                    </div>
+                    <div class="kpi-card orange">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Startups Supported</p>
+                        <p class="text-3xl font-black text-white">34</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Beneficiaries by Status -->
+                    <div class="chart-panel">
+                        <h3 class="text-lg font-bold text-white mb-1">Beneficiaries by Status</h3>
+                        <p class="text-slate-400 text-sm mb-6">Completion tracking across all enterprise programmes</p>
+                        <div class="space-y-5">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Graduated</span><span class="text-tshi-green">54</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-8">
+                                    <div class="h-8 rounded-full bg-tshi-cyan flex items-center pl-3 text-white text-xs font-bold" style="width:62%">62%</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">In Progress</span><span class="text-tshi-orange">22</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-8">
+                                    <div class="h-8 rounded-full bg-tshi-green flex items-center pl-3 text-white text-xs font-bold" style="width:25%">25%</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Non-fulfilment</span><span class="text-tshi-coral">7</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-8">
+                                    <div class="h-8 rounded-full bg-tshi-coral flex items-center pl-3 text-white text-xs font-bold" style="width:8%">8%</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-300">Absconded</span><span class="text-slate-500">4</span>
+                                </div>
+                                <div class="w-full bg-tshi-navy rounded-full h-8">
+                                    <div class="h-8 rounded-full bg-slate-600 flex items-center pl-3 text-white text-xs font-bold" style="width:5%">5%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Beneficiaries per Project -->
+                    <div class="chart-panel">
+                        <h3 class="text-lg font-bold text-white mb-1">Beneficiaries per Project</h3>
+                        <p class="text-slate-400 text-sm mb-6">Stacked by completion status</p>
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-tshi-cyan"></div><span class="text-xs text-slate-400">Graduated</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-tshi-coral"></div><span class="text-xs text-slate-400">Non-fulfilment</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-tshi-green"></div><span class="text-xs text-slate-400">In progress</span></div>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-xs text-slate-400 mb-1 font-semibold">RevUp Women's Initiative</p>
+                                <div class="stack-bar">
+                                    <div class="stack-segment bg-tshi-cyan" style="width:56%">28</div>
+                                    <div class="stack-segment bg-tshi-coral" style="width:44%">22</div>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 mb-1 font-semibold">COJ Employee Innovation</p>
+                                <div class="stack-bar">
+                                    <div class="stack-segment bg-tshi-cyan" style="width:100%">22</div>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 mb-1 font-semibold">Gaming Incubation</p>
+                                <div class="stack-bar">
+                                    <div class="stack-segment bg-tshi-cyan" style="width:60%">3</div>
+                                    <div class="stack-segment bg-tshi-green" style="width:40%">2</div>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 mb-1 font-semibold">Irish Tech Challenge</p>
+                                <div class="stack-bar">
+                                    <div class="stack-segment bg-tshi-cyan" style="width:100%">5</div>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 mb-1 font-semibold">Digital Lab Africa #6</p>
+                                <div class="stack-bar">
+                                    <div class="stack-segment bg-tshi-cyan" style="width:75%">3</div>
+                                    <div class="stack-segment bg-tshi-coral" style="width:25%">1</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======= PARTNERSHIPS TAB ======= -->
+        <div id="partnerships" class="tab-pane">
+            <div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-8 space-y-8">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-slate-500">Dashboard</span>
+                    <span class="chevron-sep">/</span>
+                    <span class="text-tshi-green font-semibold">Strategic Partnerships</span>
+                </div>
+
+                <div class="flex items-start gap-5">
+                    <div class="p-3 bg-[#19486A]/20 rounded-xl">
+                        <span class="material-symbols-outlined text-tshi-blue text-3xl filled">handshake</span>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-white tracking-tight">Strategic, Global & Local Partnerships</h2>
+                        <p class="text-slate-400 mt-1">Building bridges across borders with industry, government, and academia</p>
+                    </div>
+                    <div class="ml-auto">
+                        <div class="sdg-badge bg-[#19486A]/30 text-tshi-blue">SDG 17 · Partnerships for the Goals</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="kpi-card green">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Partners</p>
+                        <p class="text-3xl font-black text-white">59</p>
+                    </div>
+                    <div class="kpi-card cyan">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Projects</p>
+                        <p class="text-3xl font-black text-white">46</p>
+                    </div>
+                    <div class="kpi-card pink">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Local Partners</p>
+                        <p class="text-3xl font-black text-white">62%</p>
+                    </div>
+                    <div class="kpi-card purple">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Countries</p>
+                        <p class="text-3xl font-black text-white">14</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Partner Country of Origin -->
+                    <div class="chart-panel">
+                        <h3 class="text-lg font-bold text-white mb-1">Partner Country of Origin</h3>
+                        <p class="text-slate-400 text-sm mb-6">Geographic distribution of partnerships</p>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">South Africa</span><span class="text-tshi-pink">35</span></div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6"><div class="h-6 rounded-full bg-tshi-pink" style="width:100%"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">USA</span><span class="text-tshi-pink">7</span></div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6"><div class="h-6 rounded-full bg-tshi-pink" style="width:20%"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">France</span><span class="text-tshi-pink">3</span></div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6"><div class="h-6 rounded-full bg-tshi-pink" style="width:9%"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">Pan-African</span><span class="text-tshi-pink">3</span></div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6"><div class="h-6 rounded-full bg-tshi-pink" style="width:9%"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">Germany, Global, UK</span><span class="text-tshi-pink">2 each</span></div>
+                                <div class="w-full bg-tshi-navy rounded-full h-6"><div class="h-6 rounded-full bg-tshi-pink" style="width:6%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Value Proposition + Local vs International -->
+                    <div class="chart-panel">
+                        <h3 class="text-lg font-bold text-white mb-1">Local vs International Partners</h3>
+                        <p class="text-slate-400 text-sm mb-6">Geographic split of partnership base</p>
+                        <div class="flex items-center gap-8">
+                            <svg width="180" height="180" viewBox="0 0 180 180">
+                                <circle cx="90" cy="90" r="65" fill="none" stroke="#1e3a5f" stroke-width="26"/>
+                                <circle cx="90" cy="90" r="65" fill="none" stroke="#2DD881" stroke-width="26"
+                                    stroke-dasharray="252 408" stroke-dashoffset="0" transform="rotate(-90 90 90)"/>
+                                <circle cx="90" cy="90" r="65" fill="none" stroke="#FF4D8D" stroke-dasharray="156 408"
+                                    stroke-dashoffset="-252" transform="rotate(-90 90 90)"/>
+                                <text x="90" y="85" text-anchor="middle" fill="white" font-size="20" font-weight="900" font-family="Plus Jakarta Sans">62%</text>
+                                <text x="90" y="105" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">LOCAL</text>
+                            </svg>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-4 h-4 rounded-full bg-tshi-green"></div>
+                                    <div>
+                                        <p class="text-lg font-bold text-white">Local — 62%</p>
+                                        <p class="text-xs text-slate-400">South African based partners</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-4 h-4 rounded-full bg-tshi-pink"></div>
+                                    <div>
+                                        <p class="text-lg font-bold text-white">International — 38%</p>
+                                        <p class="text-xs text-slate-400">Global reach across 13 countries</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-tshi-border">
+                            <h4 class="text-sm font-bold text-white mb-4">Value Proposition Distribution</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-tshi-navy rounded-lg p-3 text-center">
+                                    <p class="text-2xl font-black text-tshi-cyan">35</p>
+                                    <p class="text-xs text-slate-400 mt-1">Ecosystem Dev</p>
+                                </div>
+                                <div class="bg-tshi-navy rounded-lg p-3 text-center">
+                                    <p class="text-2xl font-black text-tshi-green">22</p>
+                                    <p class="text-xs text-slate-400 mt-1">Access to Markets</p>
+                                </div>
+                                <div class="bg-tshi-navy rounded-lg p-3 text-center">
+                                    <p class="text-2xl font-black text-tshi-pink">11</p>
+                                    <p class="text-xs text-slate-400 mt-1">Enterprise Dev</p>
+                                </div>
+                                <div class="bg-tshi-navy rounded-lg p-3 text-center">
+                                    <p class="text-2xl font-black text-tshi-orange">9</p>
+                                    <p class="text-xs text-slate-400 mt-1">Skills Dev</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======= ECOSYSTEM & MARKET TAB ======= -->
+        <div id="ecosystem" class="tab-pane">
+            <div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-8 space-y-8">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-slate-500">Dashboard</span>
+                    <span class="chevron-sep">/</span>
+                    <span class="text-tshi-green font-semibold">Ecosystem Development & Access to Markets</span>
+                </div>
+
+                <div class="flex items-start gap-5">
+                    <div class="p-3 bg-tshi-cyan/10 rounded-xl">
+                        <span class="material-symbols-outlined text-tshi-cyan text-3xl filled">hub</span>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-white tracking-tight">Ecosystem & Market Access</h2>
+                        <p class="text-slate-400 mt-1">Coworking, events, community building, and market pathways</p>
+                    </div>
+                </div>
+
+                <!-- Split KPIs -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Ecosystem KPIs -->
+                    <div>
+                        <h3 class="text-sm font-bold text-tshi-cyan uppercase tracking-wider mb-3">Ecosystem Development</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="kpi-card cyan">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Coworking Members</p>
+                                <p class="text-3xl font-black text-white">156</p>
+                            </div>
+                            <div class="kpi-card cyan">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Events Hosted</p>
+                                <p class="text-3xl font-black text-white">42</p>
+                            </div>
+                            <div class="kpi-card cyan">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Event Attendees</p>
+                                <p class="text-3xl font-black text-white">3,840</p>
+                            </div>
+                            <div class="kpi-card cyan">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Community Size</p>
+                                <p class="text-3xl font-black text-white">2,100+</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Market Access KPIs -->
+                    <div>
+                        <h3 class="text-sm font-bold text-tshi-orange uppercase tracking-wider mb-3">Access to Markets</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="kpi-card orange">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Festivals & Showcases</p>
+                                <p class="text-3xl font-black text-white">8</p>
+                            </div>
+                            <div class="kpi-card orange">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Beneficiaries</p>
+                                <p class="text-3xl font-black text-white">142</p>
+                            </div>
+                            <div class="kpi-card orange">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">International Events</p>
+                                <p class="text-3xl font-black text-white">5</p>
+                            </div>
+                            <div class="kpi-card orange">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Countries Reached</p>
+                                <p class="text-3xl font-black text-white">7</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Events Table -->
+                <div class="chart-panel overflow-x-auto">
+                    <h3 class="text-lg font-bold text-white mb-1">Key Events & Showcases</h3>
+                    <p class="text-slate-400 text-sm mb-6">Community events, hackathons, and market access activations</p>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Type</th>
+                                <th>Attendees</th>
+                                <th>Department</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-semibold text-white">Fak'ugesi Festival</td>
+                                <td>Festival</td>
+                                <td>850</td>
+                                <td><span class="text-tshi-orange">Access to Markets</span></td>
+                                <td><span class="px-2 py-0.5 bg-tshi-green/10 text-tshi-green rounded-full text-xs font-bold">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold text-white">Ayoba Hackathon</td>
+                                <td>Hackathon</td>
+                                <td>320</td>
+                                <td><span class="text-tshi-cyan">Ecosystem Dev</span></td>
+                                <td><span class="px-2 py-0.5 bg-tshi-green/10 text-tshi-green rounded-full text-xs font-bold">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold text-white">BAI Showcase</td>
+                                <td>Exhibition</td>
+                                <td>215</td>
+                                <td><span class="text-tshi-orange">Access to Markets</span></td>
+                                <td><span class="px-2 py-0.5 bg-tshi-green/10 text-tshi-green rounded-full text-xs font-bold">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold text-white">Civic Tech Innovation Forum</td>
+                                <td>Conference</td>
+                                <td>280</td>
+                                <td><span class="text-tshi-cyan">Ecosystem Dev</span></td>
+                                <td><span class="px-2 py-0.5 bg-tshi-green/10 text-tshi-green rounded-full text-xs font-bold">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold text-white">World Café Series</td>
+                                <td>Workshop</td>
+                                <td>180</td>
+                                <td><span class="text-tshi-cyan">Ecosystem Dev</span></td>
+                                <td><span class="px-2 py-0.5 bg-tshi-green/10 text-tshi-green rounded-full text-xs font-bold">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold text-white">Creation Afrique: Paris Forum</td>
+                                <td>Exhibition</td>
+                                <td>120</td>
+                                <td><span class="text-tshi-orange">Access to Markets</span></td>
+                                <td><span class="px-2 py-0.5 bg-tshi-green/10 text-tshi-green rounded-full text-xs font-bold">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold text-white">Huawei 5G Masterclass</td>
+                                <td>Training</td>
+                                <td>95</td>
+                                <td><span class="text-tshi-cyan">Ecosystem Dev</span></td>
+                                <td><span class="px-2 py-0.5 bg-tshi-green/10 text-tshi-green rounded-full text-xs font-bold">Completed</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Coworking Stats -->
+                <div class="chart-panel">
+                    <h3 class="text-lg font-bold text-white mb-6">Coworking Space Utilisation</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="text-center">
+                            <svg width="140" height="140" viewBox="0 0 140 140" class="mx-auto">
+                                <circle cx="70" cy="70" r="55" fill="none" stroke="#1e3a5f" stroke-width="12"/>
+                                <circle cx="70" cy="70" r="55" fill="none" stroke="#3ECFCF" stroke-width="12"
+                                    stroke-dasharray="276 346" stroke-dashoffset="0" class="progress-ring"/>
+                                <text x="70" y="65" text-anchor="middle" fill="white" font-size="22" font-weight="900" font-family="Plus Jakarta Sans">80%</text>
+                                <text x="70" y="82" text-anchor="middle" fill="#94a3b8" font-size="10">OCCUPANCY</text>
+                            </svg>
+                            <p class="text-sm font-bold text-white mt-3">Desk Occupancy</p>
+                            <p class="text-xs text-slate-400">Average monthly rate</p>
+                        </div>
+                        <div class="text-center">
+                            <svg width="140" height="140" viewBox="0 0 140 140" class="mx-auto">
+                                <circle cx="70" cy="70" r="55" fill="none" stroke="#1e3a5f" stroke-width="12"/>
+                                <circle cx="70" cy="70" r="55" fill="none" stroke="#2DD881" stroke-width="12"
+                                    stroke-dasharray="311 346" stroke-dashoffset="0" class="progress-ring"/>
+                                <text x="70" y="65" text-anchor="middle" fill="white" font-size="22" font-weight="900" font-family="Plus Jakarta Sans">90%</text>
+                                <text x="70" y="82" text-anchor="middle" fill="#94a3b8" font-size="10">RETENTION</text>
+                            </svg>
+                            <p class="text-sm font-bold text-white mt-3">Member Retention</p>
+                            <p class="text-xs text-slate-400">Year-over-year</p>
+                        </div>
+                        <div class="text-center">
+                            <svg width="140" height="140" viewBox="0 0 140 140" class="mx-auto">
+                                <circle cx="70" cy="70" r="55" fill="none" stroke="#1e3a5f" stroke-width="12"/>
+                                <circle cx="70" cy="70" r="55" fill="none" stroke="#FFB347" stroke-width="12"
+                                    stroke-dasharray="242 346" stroke-dashoffset="0" class="progress-ring"/>
+                                <text x="70" y="65" text-anchor="middle" fill="white" font-size="22" font-weight="900" font-family="Plus Jakarta Sans">70%</text>
+                                <text x="70" y="82" text-anchor="middle" fill="#94a3b8" font-size="10">EVENTS</text>
+                            </svg>
+                            <p class="text-sm font-bold text-white mt-3">Event Space Usage</p>
+                            <p class="text-xs text-slate-400">Monthly average</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="border-t border-tshi-border bg-tshi-navy py-6 px-6 lg:px-10">
+        <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
+            <div class="flex items-center gap-3">
+                <span class="font-bold text-slate-400" style="font-family:'Space Grotesk',monospace;">TSHIMOLOGONG</span>
+                <span>·</span>
+                <span>Wits University · Digital Innovation Precinct</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs">Dashboard built by</span>
+                <span class="text-tshi-green font-bold text-xs">Itumeleng Shange</span>
+                <span class="text-xs">· Custom HTML/CSS/JS (No Power BI)</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== React Trend Chart ========== -->
+    <script type="text/babel" data-type="module">
+    import React, { useState } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import {
+        AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+        ResponsiveContainer, ComposedChart, Line, Legend
+    } from 'recharts';
+
+    const TrendChart = () => {
+        const data = [
+            { year: '2020', beneficiaries: 420, funding: 18.2, programmes: 12, partners: 28 },
+            { year: '2021', beneficiaries: 580, funding: 24.5, programmes: 16, partners: 35 },
+            { year: '2022', beneficiaries: 780, funding: 30.1, programmes: 19, partners: 42 },
+            { year: '2023', beneficiaries: 1054, funding: 35.0, programmes: 22, partners: 52 },
+            { year: '2024', beneficiaries: 1247, funding: 42.8, programmes: 24, partners: 67 },
+        ];
+
+        const [metric, setMetric] = useState('beneficiaries');
+
+        const metricConfig = {
+            beneficiaries: { label: 'Total Beneficiaries', color: '#2DD881', format: v => v.toLocaleString() },
+            funding: { label: 'Total Funding (R millions)', color: '#FF4D8D', format: v => `R${v}M` },
+            programmes: { label: 'Programmes Run', color: '#3ECFCF', format: v => v },
+            partners: { label: 'Partners', color: '#A78BFA', format: v => v },
+        };
+
+        const cfg = metricConfig[metric];
+
+        return (
+            <div>
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 className="text-lg font-bold text-white">Year-on-Year Growth Trajectory</h3>
+                        <p className="text-slate-400 text-sm">5-year impact trend across key metrics</p>
+                    </div>
+                    <select
+                        value={metric}
+                        onChange={e => setMetric(e.target.value)}
+                        className="bg-[#0B1929] border border-[#1e3a5f] rounded-lg px-4 py-2 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#2DD881]/20"
+                    >
+                        <option value="beneficiaries">Beneficiaries</option>
+                        <option value="funding">Funding</option>
+                        <option value="programmes">Programmes</option>
+                        <option value="partners">Partners</option>
+                    </select>
+                </div>
+                <div style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={data}>
+                            <defs>
+                                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor={cfg.color} stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor={cfg.color} stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(30,58,95,0.5)" vertical={false}/>
+                            <XAxis dataKey="year" stroke="#64748b" style={{ fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false}/>
+                            <YAxis stroke="#64748b" style={{ fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} tickFormatter={cfg.format}/>
+                            <Tooltip
+                                contentStyle={{ backgroundColor: '#132640', border: '1px solid #1e3a5f', borderRadius: 12, color: '#fff' }}
+                                labelStyle={{ color: '#94a3b8', fontWeight: 700 }}
+                                formatter={val => [cfg.format(val), cfg.label]}
+                            />
+                            <Area type="monotone" dataKey={metric} fill="url(#grad)" stroke={cfg.color} strokeWidth={3} dot={{ r: 5, fill: cfg.color, strokeWidth: 0 }} activeDot={{ r: 7 }}/>
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+        );
+    };
+
+    const root = document.getElementById('overview-trend-root');
+    if (root) createRoot(root).render(<TrendChart />);
+    </script>
+
+    <!-- ========== Tab Switching Logic ========== -->
+    <script>
+        function switchTab(event, tabName) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            const pane = document.getElementById(tabName);
+            if (pane) pane.classList.add('active');
+            if (event && event.target) {
+                event.target.closest('.tab-btn').classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
